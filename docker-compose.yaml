@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${IMAGE:-registry.local/springboot-k8s-demo:dev}
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+      JDBC_URL: ${JDBC_URL:-jdbc:postgresql://db:5432/demo}
+      DB_USER: ${DB_USER:-demo}
+      DB_PASSWORD: ${DB_PASSWORD:-change-me}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/ >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  db:
+    image: bitnami/postgresql:16
+    environment:
+      POSTGRESQL_USERNAME: demo
+      POSTGRESQL_PASSWORD: change-me
+      POSTGRESQL_DATABASE: demo
+    ports:
+      - "5432:5432"   # optional for local psql access
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U demo -d demo -h 127.0.0.1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - pgdata:/bitnami/postgresql
+    restart: unless-stopped
+    profiles: ["db"]
+
+volumes:
+  pgdata: {}
+
