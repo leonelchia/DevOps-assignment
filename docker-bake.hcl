@@ -36,7 +36,7 @@ target "app" {
   dockerfile = "Dockerfile"
 
   # Multi-arch
-  platforms = [ split(PLATFORMS, ",")... ]
+  platforms = split(PLATFORMS, ",") 
 
   # Tag used when not pushing (local dev)
   tags = [
