@@ -1,0 +1,87 @@
+name: Terraform Apply
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'ops/terraform/**'
+      - '.github/workflows/terraform-apply.yaml'
+  workflow_dispatch:
+    inputs:
+      var_file:
+        description: 'Optional tfvars file relative to ops/terraform (e.g., env/prod.tfvars)'
+        required: false
+        type: string
+
+permissions:
+  id-token: write     # for AWS OIDC
+  contents: read
+
+env:
+  AWS_REGION:  ${{ vars.AWS_REGION }}
+  TF_WORKDIR:  ops/terraform
+  TF_VERSION:  1.9.5
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: terraform-apply   # prevent concurrent applies
+      cancel-in-progress: false
+
+    defaults:
+      run:
+        working-directory: ${{ env.TF_WORKDIR }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform init
+        run: terraform init -input=false
+
+      - name: Terraform validate
+        run: terraform validate -no-color
+
+      - name: Terraform plan (for visibility in logs)
+        id: plan
+        run: |
+          if [ -n "${{ inputs.var_file }}" ]; then
+            terraform plan -input=false -no-color -var-file="${{ inputs.var_file }}" -out=tfplan
+          else
+            terraform plan -input=false -no-color -out=tfplan
+          fi
+          terraform show -no-color tfplan > plan.txt
+
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ github.run_id }}
+          path: |
+            ${{ env.TF_WORKDIR }}/tfplan
+            ${{ env.TF_WORKDIR }}/plan.txt
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Terraform apply (non-interactive)
+        run: |
+          terraform apply -input=false -auto-approve tfplan
+
+      - name: Output summary
+        run: |
+          echo "## Terraform Apply ✅" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Directory:** \`${{ env.TF_WORKDIR }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Region:** \`${{ env.AWS_REGION }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Var file:** \`${{ inputs.var_file || '(none)' }}\`" >> $GITHUB_STEP_SUMMARY

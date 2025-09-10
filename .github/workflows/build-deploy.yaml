@@ -1,0 +1,23 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yaml
+    secrets: inherit
+
+  deploy:
+    needs: build
+    uses: ./.github/workflows/deploy.yaml
+    secrets: inherit
+    with:
+      repository_uri: ${{ needs.build.outputs.repository_uri }}
+      image_tag:      ${{ needs.build.outputs.image_tag }}
+      include_db:     "false"
+
+
+ 

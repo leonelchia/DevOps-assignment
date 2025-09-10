@@ -1,0 +1,135 @@
+name: deploy
+
+on:
+  workflow_call:
+    inputs:
+      image_tag:
+        description: "Immutable image tag (e.g., sha-abc1234)"
+        required: true
+        type: string
+      repository_uri:
+        description: "ECR repo URI (e.g., 123456789012.dkr.ecr.eu-north-1.amazonaws.com/springboot-k8s-demo)"
+        required: true
+        type: string
+      include_db:
+        description: "Also deploy DB (Bitnami Postgres via Kustomize Helm)"
+        required: false
+        default: "false"
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+  packages: read
+
+env:
+  AWS_REGION:  ${{ vars.AWS_REGION }}
+  EKS_CLUSTER: ${{ vars.EKS_CLUSTER }}
+  OVERLAY: dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+
+      - name: Update kubeconfig for EKS
+        run: aws eks update-kubeconfig --name "${{ env.EKS_CLUSTER }}" --region "${{ env.AWS_REGION }}"
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Install kustomize (v5+)
+        run: |
+          curl -sSL https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh | bash
+          sudo mv kustomize /usr/local/bin/kustomize
+
+      - name: Ensure namespaces 
+        run: |
+          kubectl get ns demo || kubectl create ns demo
+          kubectl get ns demo-db || kubectl create ns demo-db
+
+      - name: Resolve inputs
+        id: meta
+        shell: bash
+        run: |
+          REPO="${{ inputs.repository_uri || github.event.inputs.repository_uri }}"
+          TAG="${{ inputs.image_tag     || github.event.inputs.image_tag     }}"
+          if [ -z "$TAG" ]; then TAG="${GITHUB_SHA::7}"; fi
+          echo "repo=$REPO" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG"   >> "$GITHUB_OUTPUT"
+          echo "include_db=${{ inputs.include_db || github.event.inputs.include_db || 'false' }}" >> "$GITHUB_OUTPUT"
+
+      - name: Set image in dev overlay (no commit)
+        working-directory: ops/kubernetes/overlays/${{ env.OVERLAY }}
+        run: |
+          kustomize edit set image \
+            ${{ steps.meta.outputs.repo }}=${{ steps.meta.outputs.repo }}:${{ steps.meta.outputs.tag }}
+          echo "Using image -> ${{ steps.meta.outputs.repo }}:${{ steps.meta.outputs.tag }}"
+
+      # --- DB secrets for Bitnami chart in demo-db ---
+      # Create/Update the chart's expected Secret: db-auth
+      # Requires these GitHub secrets:
+      #   DB_SUPERUSER_PASSWORD (postgres user)
+      #   DB_USER_PASSWORD      (regular app user)
+      - name: Create/Update db-auth secret (demo-db)
+        run: |
+          kubectl -n demo-db create secret generic db-auth \
+            --from-literal=postgres-password='${{ secrets.DB_SUPERUSER_PASSWORD }}' \
+            --from-literal=password='${{ secrets.DB_USER_PASSWORD }}' \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      # --- App secrets via kustomize secretGenerator in demo overlay ---
+      # Requires these GitHub secrets/vars (with defaults inlined here):
+      #   secrets.DB_USER (default appuser)
+      #   secrets.DB_NAME (default appdb)
+      - name: Write secrets.env for secretGenerator (demo)
+        working-directory: ops/kubernetes/overlays/${{ env.OVERLAY }}
+        shell: bash
+        run: |
+          umask 077
+          DB_USER="${{ secrets.DB_USER || 'appuser' }}"
+          DB_NAME="${{ secrets.DB_NAME || 'appdb' }}"
+          JDBC_URL="jdbc:postgresql://db.demo-db.svc.cluster.local:5432/${DB_NAME}"
+
+          cat > secrets.env <<EOF
+          DB_USER=${DB_USER}
+          DB_PASSWORD=${{ secrets.DB_USER_PASSWORD }}
+          JDBC_URL=${JDBC_URL}
+          EOF
+
+          echo "Wrote secrets.env with JDBC_URL=${JDBC_URL}"
+
+      - name: Deploy app (overlay/dev)
+        run: |
+          kustomize build ops/kubernetes/overlays/${{ env.OVERLAY }} --enable-helm | kubectl apply -f -
+
+      - name: Optionally deploy DB stack (base/db)
+        if: ${{ steps.meta.outputs.include_db == 'true' }}
+        run: |
+          kustomize build ops/kubernetes/base/db --enable-helm | kubectl apply -f -
+
+      - name: Wait for app rollout
+        run: kubectl -n demo rollout status deploy/demo --timeout=300s
+
+      - name: Restart app to pick up new Secret (idempotent)
+        run: kubectl -n demo rollout restart deployment/demo
+
+      - name: Show Service endpoint
+        run: |
+          kubectl -n demo get svc demo -o wide
+          echo "External: $(kubectl -n demo get svc demo -o jsonpath='{.status.loadBalancer.ingress[0].hostname}{.status.loadBalancer.ingress[0].ip}')"
+
+      - name: Clean up secrets.env
+        if: always()
+        working-directory: ops/kubernetes/overlays/${{ env.OVERLAY }}
+        run: rm -f secrets.env
+

@@ -1,0 +1,36 @@
+# Bitnami PostgreSQL (v15.x) values
+# Rendered via kustomize helmCharts with releaseName: postgresql, namespace: demo-db
+
+fullnameOverride: db
+
+auth:
+  existingSecret: db-auth
+  secretKeys:
+    adminPasswordKey: postgres-password
+    userPasswordKey: password
+
+  username: appuser
+  database: appdb
+
+primary:
+  nodeSelector:
+    nodepool: db
+  tolerations:
+    - key: "db"
+      operator: "Equal"
+      value: "true"
+      effect: "NoSchedule"
+
+  persistence:
+    enabled: true
+    size: 10Gi
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+
