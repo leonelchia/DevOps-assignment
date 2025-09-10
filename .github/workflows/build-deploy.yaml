@@ -7,17 +7,26 @@ on:
 
 jobs:
   build:
+    permissions:
+      id-token: write      # needed for aws-actions/configure-aws-credentials (OIDC)
+      contents: read
+      packages: read
     uses: ./.github/workflows/build.yaml
     secrets: inherit
 
   deploy:
     needs: build
+    permissions:
+      id-token: write
+      contents: read
+      packages: read
     uses: ./.github/workflows/deploy.yaml
     secrets: inherit
     with:
       repository_uri: ${{ needs.build.outputs.repository_uri }}
       image_tag:      ${{ needs.build.outputs.image_tag }}
       include_db:     "false"
+
 
 
  
