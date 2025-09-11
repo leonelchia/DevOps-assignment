@@ -2,19 +2,32 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 nameSuffix: -dev
-commonLabels:
-  env: dev
+commonLabels: { env: dev }
 namespace: demo
 
 resources:
-  - ../../base
+  - ../../base/demo-app
+  - ../../base/db
+
+
 
 configMapGenerator:
   - name: demo-config
     behavior: replace
     literals:
       - SERVER_PORT=8080
-      # add env-specific config here
+
+# NEW: generate Secret from env file that the workflow writes at deploy time
+secretGenerator:
+  - name: demo-secrets
+    envs:
+      - secrets.env     # this file is created on-the-fly by deploy.yaml
+    type: Opaque
+    behavior: replace
+
+generatorOptions:
+  # Keep a stable Secret name so your Deployment’s envFrom: {name: demo-secrets} works
+  disableNameSuffixHash: true
 
 patches:
   - path: patch-deployment.yaml
@@ -22,4 +35,4 @@ patches:
 images:
   - name: ACCOUNT_ID.dkr.ecr.AWS_REGION.amazonaws.com/REPO_NAME
     newName: ACCOUNT_ID.dkr.ecr.AWS_REGION.amazonaws.com/REPO_NAME
-    newTag: main   # CI overrides with sha
+    newTag: main
