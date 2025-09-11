@@ -75,12 +75,10 @@ module "eks" {
     
     github_ci = {
       principal_arn = aws_iam_role.github_deployer.arn
-      policy_associations = [
-        {
-          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-          access_scope = { type = "cluster" }
-        }
-      ]
+      policy_associations = [{
+        policy_arn  = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+        access_scope = { type = "cluster" }
+      }]
     }
   }
 
@@ -203,7 +201,8 @@ resource "aws_iam_role_policy" "github_perms" {
           "ecr:BatchGetImage",
           "ecr:DescribeRepositories",
           "ecr:CreateRepository",
-          "ecr:ListImages"
+          "ecr:ListImages",
+          "ecr:DescribeImages"
         ],
         Resource = "*"
       },

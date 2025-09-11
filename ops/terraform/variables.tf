@@ -21,7 +21,7 @@ variable "name_prefix" {
 variable "aws_profile" {
   type        = string
   description = "AWS CLI profile to use for local development"
-  default     = "dev-admin" # or whatever you use locally
+  default     = "dev-admin" #  use locally
 }
 
 
