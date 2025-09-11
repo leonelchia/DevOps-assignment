@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
 
 permissions:
-  id-token: write         # for AWS OIDC
+  id-token: write         
   contents: read
-  pull-requests: write    # to post a PR comment with the plan
+  pull-requests: write    
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
