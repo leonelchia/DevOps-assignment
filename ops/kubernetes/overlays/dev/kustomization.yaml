@@ -12,22 +12,16 @@ resources:
 
 
 configMapGenerator:
-  - name: demo-config
-    behavior: replace
-    literals:
+  - literals: 
       - SERVER_PORT=8080
+    name: demo-config  
 
-# NEW: generate Secret from env file that the workflow writes at deploy time
 secretGenerator:
   - name: demo-secrets
     envs:
-      - secrets.env     # this file is created on-the-fly by deploy.yaml
-    type: Opaque
-    behavior: replace
+      - secrets.env    
 
-generatorOptions:
-  # Keep a stable Secret name so your Deployment’s envFrom: {name: demo-secrets} works
-  disableNameSuffixHash: true
+
 
 patches:
   - path: patch-deployment.yaml
