@@ -5,7 +5,9 @@ metadata:
 spec:
   type: LoadBalancer
   selector:
-    app: demo
+    app: springboot-k8s
+    env: dev
   ports:
-    - port: 80
+    - name: http
+      port: 80
       targetPort: 8080
