@@ -15,18 +15,35 @@ spec:
     spec:
       containers:
         - name: app
-          image: 275581418810.dkr.ecr.eu-north-1.amazonaws.com/springboot-k8s-demo:latest
+          image: 275581418810.dkr.ecr.eu-north-1.amazonaws.com/springboot-k8s-demo:sha-99ca7be # use an immutable tag
           ports:
             - containerPort: 8080
+          # give the JVM time to warm up before liveness kicks in
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 24      # ~2 minutes
           readinessProbe:
-            httpGet: { path: /actuator/health, port: 8080 }
-            initialDelaySeconds: 10
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 5
             periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 6
           livenessProbe:
-            httpGet: { path: /actuator/health, port: 8080 }
-            initialDelaySeconds: 30
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 0
             periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 3
           resources:
             requests: { cpu: "100m", memory: "256Mi" }
             limits:   { cpu: "500m", memory: "512Mi" }
+
 

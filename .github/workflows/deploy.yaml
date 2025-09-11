@@ -118,11 +118,11 @@ jobs:
         run: |
           kustomize build ops/kubernetes/base/db --enable-helm | kubectl apply -f -
 
-      - name: Wait for app rollout
-        run: kubectl -n demo rollout status deploy/demo --timeout=300s
-
       - name: Restart app to pick up new Secret (idempotent)
-        run: kubectl -n demo rollout restart deployment/demo
+        run: kubectl -n demo rollout restart deployment/springboot-k8s-dev
+
+      - name: Wait for app rollout
+        run: kubectl -n demo rollout status deploy/springboot-k8s-dev --timeout=300s  
 
       - name: Show Service endpoint
         run: |
