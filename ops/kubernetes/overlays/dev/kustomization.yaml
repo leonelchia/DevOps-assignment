@@ -21,11 +21,6 @@ secretGenerator:
     envs:
       - secrets.env    
 
-
-
-patches:
-  - path: patch-deployment.yaml
-
 images:
   - name: ACCOUNT_ID.dkr.ecr.AWS_REGION.amazonaws.com/REPO_NAME
     newName: ACCOUNT_ID.dkr.ecr.AWS_REGION.amazonaws.com/REPO_NAME
