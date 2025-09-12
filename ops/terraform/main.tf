@@ -25,7 +25,7 @@ module "vpc" {
   public_subnets  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
 
   enable_nat_gateway     = true
-  single_nat_gateway     = true # save cost (fine for dev; not ideal for prod)
+  single_nat_gateway     = true # save cost (fine for dev; not ideal for prod in prod Switch to single_nat_gateway = false and one_nat_gateway_per_az = true)
   one_nat_gateway_per_az = false
 
   public_subnet_tags = {
@@ -45,7 +45,7 @@ module "eks" {
   version = "~> 20.0"
 
   cluster_name    = var.cluster_name
-  cluster_version = "1.30"
+  cluster_version = "1.33"
 
   vpc_id                   = module.vpc.vpc_id
   subnet_ids               = module.vpc.private_subnets
