@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: springboot-k8s
-  namespace: app
+  namespace: demo
 spec:
   replicas: 2
   selector:
@@ -15,7 +15,12 @@ spec:
     spec:
       containers:
         - name: app
-          image: 275581418810.dkr.ecr.eu-north-1.amazonaws.com/springboot-k8s-demo:sha-99ca7be # use an immutable tag
+          image: 275581418810.dkr.ecr.eu-north-1.amazonaws.com/springboot-k8s-demo
+          envFrom:
+            - configMapRef:
+                name: demo-config 
+            - secretRef:
+                name: demo-secrets
           ports:
             - containerPort: 8080
           # give the JVM time to warm up before liveness kicks in

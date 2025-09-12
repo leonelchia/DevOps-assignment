@@ -28,5 +28,4 @@ variable "aws_profile" {
 variable "github_org" { type = string }
 variable "github_repo" { type = string }
 
-# If you don't have GH OIDC provider, create it; otherwise pass the ARN here.
-#variable "github_oidc_provider_arn" { type = string }
+

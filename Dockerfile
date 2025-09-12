@@ -5,8 +5,6 @@ RUN --mount=type=cache,target=/root/.m2 mvn -f app/pom.xml -q -DskipTests depend
 COPY app ./app
 RUN --mount=type=cache,target=/root/.m2 mvn -f app/pom.xml -q -DskipTests clean package
 
-
-# Run
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 ENV PORT=8080
