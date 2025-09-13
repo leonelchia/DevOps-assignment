@@ -14,8 +14,8 @@ on:
       include_db:
         description: "Also deploy DB (Bitnami Postgres via Kustomize Helm)"
         required: false
-        default: "false"
-        type: string
+        default: false
+        type: boolean
 
 permissions:
   id-token: write
@@ -114,7 +114,7 @@ jobs:
           kustomize build ops/kubernetes/overlays/app/${{ env.OVERLAY }} --enable-helm | kubectl apply -f -
 
       - name: Optionally deploy DB stack (base/db)
-        if: ${{ steps.meta.outputs.include_db == 'true' }}
+        if: ${{ inputs.include_db }}
         run: |
           kustomize build ops/kubernetes/overlays/db/app --enable-helm | kubectl apply -f -
 
