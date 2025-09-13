@@ -14,8 +14,6 @@ public class HelloController {
 
   @GetMapping("/")
   public String home() {
-    String version = build != null ? build.getVersion() : "unknown";
-    String commit  = git != null ? git.getShortCommitId() : "unknown";
     String pod     = System.getenv().getOrDefault("POD_NAME", "n/a");
     String node    = System.getenv().getOrDefault("NODE_NAME", "n/a");
     String ns      = System.getenv().getOrDefault("NAMESPACE", "n/a");
@@ -25,13 +23,11 @@ public class HelloController {
       <pre>
       Spring Boot on Kubernetes — it works!
 
-      version: %s
-      commit:  %s
       pod:     %s
       node:    %s
       ns:      %s
       image:   %s
       </pre>
-      """.formatted(version, commit, pod, node, ns, image);
+      """.formatted( pod, node, ns, image);
   }
 }
