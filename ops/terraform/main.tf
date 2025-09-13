@@ -10,7 +10,6 @@ terraform {
 
 provider "aws" {
   region  = var.region
-  profile = var.aws_profile # or delete this line and export AWS_PROFILE
 }
 
 module "vpc" {
