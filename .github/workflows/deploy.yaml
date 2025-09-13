@@ -116,7 +116,7 @@ jobs:
       - name: Optionally deploy DB stack (base/db)
         if: ${{ inputs.include_db }}
         run: |
-          kustomize build ops/kubernetes/overlays/db/app --enable-helm | kubectl apply -f -
+          kustomize build ops/kubernetes/overlays/db --enable-helm | kubectl apply -f -
 
       - name: Restart app to pick up new Secret (idempotent)
         run: kubectl -n demo rollout restart deployment/springboot-k8s-dev
