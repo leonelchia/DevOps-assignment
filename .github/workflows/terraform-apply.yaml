@@ -15,7 +15,7 @@ on:
         type: string
 
 permissions:
-  id-token: write    
+  id-token: write
   contents: read
 
 env:
@@ -24,14 +24,13 @@ env:
   TF_VERSION:  1.9.5
   TF_VAR_github_org:  ${{ github.repository_owner }}
   TF_VAR_github_repo: ${{ github.event.repository.name }}
-  AWS_SDK_LOAD_CONFIG: "1"
-  AWS_TF_PROFILE: dev-admin
+ 
 
 jobs:
   apply:
     runs-on: ubuntu-latest
     concurrency:
-      group: terraform-apply   
+      group: terraform-apply
       cancel-in-progress: false
 
     defaults:
@@ -47,6 +46,7 @@ jobs:
         with:
           aws-region: ${{ env.AWS_REGION }}
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-session-name: gha-terraform-${{ github.run_id }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -59,30 +59,15 @@ jobs:
       - name: Terraform validate
         run: terraform validate -no-color
 
-      - name: Terraform plan (for visibility in logs)
-        id: plan
-        run: |
-          if [ -n "${{ inputs.var_file }}" ]; then
-            terraform plan -input=false -no-color -var-file="${{ inputs.var_file }}" -out=tfplan
-          else
-            terraform plan -input=false -no-color -out=tfplan
-          fi
-          terraform show -no-color tfplan > plan.txt
-
-      - name: Upload plan artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: tfplan-${{ github.run_id }}
-          path: |
-            ${{ env.TF_WORKDIR }}/tfplan
-            ${{ env.TF_WORKDIR }}/plan.txt
-          if-no-files-found: error
-          retention-days: 7
-
+ 
       - name: Terraform apply (non-interactive)
         run: |
-          terraform apply -input=false -auto-approve tfplan
-
+          if [ -n "${{ inputs.var_file }}" ]; then
+            terraform apply -input=false -auto-approve -var-file="${{ inputs.var_file }}"
+          else
+            terraform apply -input=false -auto-approve
+          fi
+     
       - name: Output summary
         run: |
           echo "## Terraform Apply ✅" >> $GITHUB_STEP_SUMMARY

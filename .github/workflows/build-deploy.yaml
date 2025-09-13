@@ -26,6 +26,7 @@ jobs:
     with:
       repository_uri: ${{ needs.build.outputs.repository_uri }}
       image_tag:      ${{ needs.build.outputs.image_tag }}
+      include_db:     true
       
 
 

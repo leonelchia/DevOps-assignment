@@ -18,13 +18,6 @@ variable "name_prefix" {
   default = "springboot-k8s"
 }
 
-variable "aws_profile" {
-  type        = string
-  description = "AWS CLI profile to use for local development"
-  default     = "dev-admin" #  use locally
-}
-
-
 variable "github_org" { type = string }
 variable "github_repo" { type = string }
 
