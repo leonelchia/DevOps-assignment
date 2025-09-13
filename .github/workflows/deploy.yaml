@@ -70,7 +70,7 @@ jobs:
           echo "include_db=${{ inputs.include_db || github.event.inputs.include_db || 'false' }}" >> "$GITHUB_OUTPUT"
 
       - name: Set image in dev overlay (no commit)
-        working-directory: ops/kubernetes/overlays/${{ env.OVERLAY }}
+        working-directory: ops/kubernetes/overlays/app/${{ env.OVERLAY }}
         run: |
           kustomize edit set image \
             ${{ steps.meta.outputs.repo }}=${{ steps.meta.outputs.repo }}:${{ steps.meta.outputs.tag }}
@@ -93,7 +93,7 @@ jobs:
       #   secrets.DB_USER (default appuser)
       #   secrets.DB_NAME (default appdb)
       - name: Write secrets.env for secretGenerator (demo)
-        working-directory: ops/kubernetes/overlays/${{ env.OVERLAY }}
+        working-directory: ops/kubernetes/overlays/app/${{ env.OVERLAY }}
         shell: bash
         run: |
           umask 077
@@ -111,12 +111,12 @@ jobs:
 
       - name: Deploy app (overlay/dev)
         run: |
-          kustomize build ops/kubernetes/overlays/${{ env.OVERLAY }} --enable-helm | kubectl apply -f -
+          kustomize build ops/kubernetes/overlays/app/${{ env.OVERLAY }} --enable-helm | kubectl apply -f -
 
       - name: Optionally deploy DB stack (base/db)
         if: ${{ steps.meta.outputs.include_db == 'true' }}
         run: |
-          kustomize build ops/kubernetes/base/db --enable-helm | kubectl apply -f -
+          kustomize build ops/kubernetes/overlays/db/app --enable-helm | kubectl apply -f -
 
       - name: Restart app to pick up new Secret (idempotent)
         run: kubectl -n demo rollout restart deployment/springboot-k8s-dev
@@ -131,6 +131,6 @@ jobs:
 
       - name: Clean up secrets.env
         if: always()
-        working-directory: ops/kubernetes/overlays/${{ env.OVERLAY }}
+        working-directory: ops/kubernetes/overlays/app/${{ env.OVERLAY }}
         run: rm -f secrets.env
 
