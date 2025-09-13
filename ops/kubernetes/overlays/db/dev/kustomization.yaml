@@ -5,5 +5,5 @@ nameSuffix: -dev
 commonLabels: { env: dev }
 
 resources:
-  - ../../base/db
+  - ../../../base/db
  

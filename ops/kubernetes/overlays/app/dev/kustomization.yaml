@@ -6,7 +6,7 @@ commonLabels: { env: dev }
 namespace: demo
 
 resources:
-  - ../../base/demo-app
+  - ../../../base/demo-app
  
 
 
