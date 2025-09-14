@@ -81,11 +81,6 @@ jobs:
             ${{ steps.meta.outputs.repo }}=${{ steps.meta.outputs.repo }}:${{ steps.meta.outputs.tag }}
           echo "Using image -> ${{ steps.meta.outputs.repo }}:${{ steps.meta.outputs.tag }}"
 
-      # --- DB secrets for Bitnami chart in demo-db ---
-      # Create/Update the chart's expected Secret: db-auth
-      # Requires these GitHub secrets:
-      #   DB_SUPERUSER_PASSWORD (postgres user)
-      #   DB_USER_PASSWORD      (regular app user)
       - name: Create/Update db-auth secret (demo-db)
         run: |
           kubectl -n demo-db create secret generic db-auth \
@@ -93,10 +88,6 @@ jobs:
             --from-literal=password='${{ secrets.DB_USER_PASSWORD }}' \
             --dry-run=client -o yaml | kubectl apply -f -
 
-      # --- App secrets via kustomize secretGenerator in demo overlay ---
-      # Requires these GitHub secrets/vars (with defaults inlined here):
-      #   secrets.DB_USER (default appuser)
-      #   secrets.DB_NAME (default appdb)
       - name: Write secrets.env for secretGenerator (demo)
         working-directory: ops/kubernetes/overlays/app/${{ env.OVERLAY }}
         shell: bash
@@ -126,7 +117,7 @@ jobs:
       - name: Optionally deploy monitoring stack
         if: ${{ inputs.include_monitor }}
         run: |
-          kustomize build ops/kubernetes/overlays/monitor/${{ env.OVERLAY }} --enable-helm | kubectl apply -f -    
+          kustomize build ops/kubernetes/overlays/monitor/${{ env.OVERLAY }} --enable-helm | kubectl apply --server-side -f -    
 
       - name: Restart app to pick up new Secret (idempotent)
         run: kubectl -n demo rollout restart deployment/springboot-k8s-dev

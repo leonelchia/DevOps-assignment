@@ -7,18 +7,25 @@ helmCharts:
     version: 65.0.0
     releaseName: monitor
     namespace: monitoring
-    includeCRDs: true
+    includeCRDs: false   # skip emitting CRDs; they must already exist
     valuesInline:
       grafana:
         enabled: true
         service:
-          type: ClusterIP    #  I will not use an  external LB; I will use port-forward for now
+          type: ClusterIP         # use port-forward instead of a LoadBalancer
+        testFramework:
+          enabled: false          # stop the failing test pod
       prometheus:
         prometheusSpec:
           retention: 6h
           scrapeInterval: 15s
-          # I will leave storageSpec unset for now  => emptyDir (no PVC cost)
+          # ensure Prometheus discovers ServiceMonitors/PodMonitors cluster-wide
+          serviceMonitorSelector: {}
+          serviceMonitorNamespaceSelector: {}
+          podMonitorSelector: {}
+          podMonitorNamespaceSelector: {}
+          probeSelector: {}
+          probeNamespaceSelector: {}
       alertmanager:
         alertmanagerSpec:
-          # leave storage unset => emptyDir (ephemeral) so the logs will not survive pod restarts
-          replicas: 1
+          replicas: 1             # emptyDir storage (no PVC) by default

@@ -41,3 +41,4 @@ override.tf.json
 
 auth.sh
 
+ops/kubernetes/base/monitor/charts/
