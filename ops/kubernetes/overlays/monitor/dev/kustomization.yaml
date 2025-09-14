@@ -7,5 +7,5 @@ commonLabels:
   env: dev
 
 resources:
-  - ../../base/monitor
+  - ../../../base/monitor
   - ./servicemonitor-app.yaml
