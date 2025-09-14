@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+helmCharts:
+  - name: kube-prometheus-stack
+    repo: https://prometheus-community.github.io/helm-charts
+    version: 65.0.0
+    releaseName: monitor
+    namespace: monitoring
+    includeCRDs: true
+    valuesInline:
+      grafana:
+        enabled: true
+        service:
+          type: ClusterIP    #  I will not use an  external LB; I will use port-forward for now
+      prometheus:
+        prometheusSpec:
+          retention: 6h
+          scrapeInterval: 15s
+          # I will leave storageSpec unset for now  => emptyDir (no PVC cost)
+      alertmanager:
+        alertmanagerSpec:
+          # leave storage unset => emptyDir (ephemeral) so the logs will not survive pod restarts
+          replicas: 1

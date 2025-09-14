@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Don’t add nameSuffix here (the chart creates lots of names/CRDs)
+namespace: monitoring
+commonLabels:
+  env: dev
+
+resources:
+  - ../../base/monitor
+  - ./servicemonitor-app.yaml

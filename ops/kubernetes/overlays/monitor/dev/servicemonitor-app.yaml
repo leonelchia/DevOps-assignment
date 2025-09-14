@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: app
+  namespace: monitoring
+spec:
+  namespaceSelector:
+    matchNames: ["demo"]   
+  selector:
+    matchLabels:
+      app: springboot-k8s
+      env: dev
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 15s

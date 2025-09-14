@@ -16,6 +16,11 @@ on:
         required: false
         default: false
         type: boolean
+      include_monitor:
+        description: "Deploy kube-prometheus-stack + ServiceMonitor"
+        required: false
+        type: boolean
+        default: false  
 
 permissions:
   id-token: write
@@ -117,6 +122,11 @@ jobs:
         if: ${{ inputs.include_db }}
         run: |
           kustomize build ops/kubernetes/overlays/db/${{ env.OVERLAY }} --enable-helm | kubectl apply -f -
+
+      - name: Optionally deploy monitoring stack
+        if: ${{ inputs.include_monitor }}
+        run: |
+          kustomize build ops/kubernetes/overlay/monitor/dev --enable-helm | kubectl apply -f -    
 
       - name: Restart app to pick up new Secret (idempotent)
         run: kubectl -n demo rollout restart deployment/springboot-k8s-dev
