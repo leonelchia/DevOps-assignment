@@ -66,7 +66,7 @@ module "eks" {
   # Optional: no envelope encryption for now
   cluster_encryption_config       = []
   cluster_endpoint_public_access  = true
-  cluster_endpoint_private_access = true # keep private too (fine for dev)
+  cluster_endpoint_private_access = true 
   cluster_endpoint_public_access_cidrs = [
     "0.0.0.0/0" # replace below
   ]

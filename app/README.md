@@ -51,7 +51,7 @@ Build & test
 
 Docker (app only)
 
-# from repo root if Dockerfile is there, otherwise adjust paths
+
 docker build -t springboot-k8s-demo:dev .
 docker run --rm -p 8080:8080 \
   -e JDBC_URL=jdbc:postgresql://host.docker.internal:5432/demo \

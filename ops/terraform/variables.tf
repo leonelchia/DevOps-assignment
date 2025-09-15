@@ -18,7 +18,12 @@ variable "name_prefix" {
   default = "springboot-k8s"
 }
 
-variable "github_org" { type = string }
-variable "github_repo" { type = string }
+variable "github_org" { 
+type = string 
+}
+
+variable "github_repo" { 
+type = string 
+}
 
 
