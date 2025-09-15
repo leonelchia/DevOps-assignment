@@ -32,20 +32,18 @@ spec:
             valueFrom: { fieldRef: { fieldPath: spec.nodeName } }
           - name: NAMESPACE
             valueFrom: { fieldRef: { fieldPath: metadata.namespace } }
-          # Optional: inject your image tag via CI/Kustomize (Downward API can't read it automatically)
           - name: IMAGE_TAG
             value: "dev"
 
           ports:
             - containerPort: 8080
-          # give the JVM time to warm up before liveness kicks in
           startupProbe:
             httpGet:
               path: /actuator/health/liveness
               port: 8080
             periodSeconds: 5
             timeoutSeconds: 2
-            failureThreshold: 24      # ~2 minutes
+            failureThreshold: 24      
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
